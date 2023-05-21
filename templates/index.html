@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reset-css@5.0.1/reset.min.css">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <title>오쪼라구</title>
+
+    <style>
+        /* 공통 */
+        *{list-style: none; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif !important;}
+        a {text-decoration: none;}
+        .wrap {max-width: 1400px; margin: 0 auto; padding: 0 20px;}
+        /* navigator */
+        .nav {margin-top: 20px; background-color:white; position:-webkit-sticky; position: sticky; top:0;}
+        .nav_link:hover{ color:red;}
+        .nav > h1 {display:flex; text-align: left; margin-left: auto; margin-right: 600px;}
+        .nav ul.links {display: flex; gap: 30px; margin: 0;}
+        .nav .links li > a {padding: 12px 16px; display: block;}
+
+        .profile {
+            height: 300px;
+            margin: 50px auto auto auto;
+            padding-top: 18px;
+
+        }
+
+        .main_content {
+            margin-top: 50px;
+        }
+        .main_content ul > li > p {
+            margin-bottom : 25px;
+        }
+
+        .showbtn {
+            display: flex; 
+            flex-direction: column; /*가로 정렬 시 row로 변경*/
+            align-items: center;
+            justify-content: center;
+            
+            margin: 20px auto 50px auto;
+        }
+
+        .btn-container {display: flex; justify-content: center; margin-bottom: 50px;}
+        .btn-container  button {width: 140px; height: 48px; margin-right: 15px;}
+
+        .img {
+            width: 400px;
+            height: 300px;
+            margin-left: auto;
+            float : left;
+        }
+
+        .info {
+            font-size : 23px;
+        }
+        .info_all {
+            width: 1500px;
+            margin : 0 auto 0 auto;
+
+            display: flex;
+            flex-direction: row; /*가로 정렬 시 row로 변경 */
+            align-items: center;
+            justify-content: center;
+        }
+
+        .regi_head {
+            margin-top : 50px;
+        }
+
+        #memember_lists {margin-right: 32px;}
+
+        .member_Info {
+            color: #64748b; 
+            font-weight: bold;
+            padding: 10px 20px; 
+            border-radius: 10px; 
+            background-color: rgb(241 245 249);
+            margin-bottom: 20px;
+        }
+        .member_Info > p:first-child {font-size: 20px;}
+        .member_Info > p:nth-child(2) {font-size: 12px;} 
+    </style>
+    <script>
+        $(document).ready(function () {
+            show_Info()
+         });
+        function get_Info() {
+            let name = $('#inputName').val()
+            let mbti = $('#inputMbti').val()
+            let advantage = $('#inputAdvantage').val()
+            let style = $('#inputStyle').val()
+
+            let formData = new FormData();
+            formData.append("name_give", name)
+            formData.append("mbti_give", mbti)
+            formData.append("advantage_give", advantage)
+            formData.append("style_give", style)
+
+            fetch('/members', {method:"POST", body : formData}).then((res) => res.json()).then((data) => {
+                if(data['result'] == '저장 완료!') {
+                    alert(data['result'])
+                    window.location.reload();
+                }
+                else {
+                    alert(data['result'])
+                }
+            })
+        }
+        function show_Info() {
+            fetch('/members').then((res) => res.json()).then((data) => {
+
+                let rows = JSON.parse(data['result'])
+
+                $('#comment-lists').empty()
+                rows.forEach((a) => {
+                    let name = a['name']
+                    let mbti = a['mbti']
+                    let advantage = a['advantage']
+                    let style = a['style']
+                    let kid = a['_id'] /*요기 안에서 console log를 찍을 때 this.a['_id']라 찍어버리면 찾을수 없다라고 나옴 => this호출 시 */
+
+                    let temp_html = `<div class="memember_lists" >
+                                        <ul class="member_Info">
+                                            <p style="font-size:20px" id="oname">이름 : ${name}</p>
+                                            <p style ="font-size:20px">MBTI : ${mbti}</p>
+                                            <p style ="font-size:20px">장점 : ${advantage}</p>
+                                            <p style ="font-size:20px">협업 스타일 : ${style}</p>
+                                            <button onclick="edit_Info(this)" type="button" key-id ="${kid.$oid}" class="btn btn-dark" >수정하기</button>
+                                            <button onclick="delete_Info(this)" id="delbtn" key-id = "${kid.$oid}" type="submit" class="btn btn-outline-dark" >삭제하기</button> 
+                                        </ul>
+                                    </div>` 
+                                     //여기서 button안에 매개변수 this를 넣으면 이 매개변수 부분을 bind함            
+                    // console.log(kid.$oid) /*요기 안에서 console log를 찍을 때 this.kid라 찍어버리면 undefined가 나옴 => this호출 시 */
+                    $('#comment-lists').append(temp_html)
+                });
+            })
+        }
+
+        function edit_Info(pid) {
+            let oid = pid.getAttribute('key-id') //DB의 고유 ID값
+   
+            fetch(`/member/${oid}`).then((res) => res.json()).then((data) => {
+                let rows = data['result']
+                let name = rows[0]['name']
+                let mbti = rows[0]['mbti']
+                let advantage = rows[0]['advantage']
+                let style = rows[0]['style']
+
+                let Edit_url = `/edits/edit-Info?id=${oid}&name=${name}&mbti=${mbti}&advantage=${advantage}&style=${style}`;
+
+                window.open(Edit_url,"Edit Information"," width = 700, height = 500, resizable=no "); //name을 지정하지 않았더니 새창으로 뜨는데 팝업(작은 창)으로 안뜸
+            })
+
+        }
+
+        //05.19
+        function delete_Info(pid) {
+            let oid = pid.getAttribute('key-id') //?????????왜 됐지?? key-id의 속성값을 가져옴 여기서 key-id의 속성값은 kid.$oid로 이 값이 각 DB에 저장된 고유 id값이다!!!!!
+                                                 // document.getElementById('delbtn').getAttribute('key-id') - 결과값이 DB에 저장된 맨 처음의 값을 가져옴
+            fetch(`/member/${oid}`, {method : "DELETE"}).then((res) => res.json()).then((data) => {
+                alert(data['result'])
+                window.location.reload();
+            })
+        }
+        function btnInput() {
+            if(document.getElementById('regi').style.display == "none") {
+                
+                    let name = document.getElementsByClassName("form-control")
+                    for (i=0; i < name.length; i++){
+                        let empty_set = name.item(i)
+                        empty_set.value = ''
+                        console.log(empty_set)
+                    }
+                    // console.log(document.getElementById('inputName').value = ''); 정상작동함 이거는 근데 이렇게 일일이 하나씩 하는거 말고 한꺼번에 하고 싶다 구현이 안됨.
+                    document.getElementById('regi').style.display='block'
+                
+            }
+            else {
+                document.getElementById('regi').style.display='none';
+            }
+        }
+    </script>
+</head>
+<body>
+    <header class="header">
+    </header>
+    <nav class="nav">
+        <h1 style="font-weight: bold;"><a class ="nav_link" href="/">오쪼라구</a></h1>
+        <div class="wrap" >
+            <ul class="links">
+                <li style="font-weight: bold;"><a class ="nav_link"href="/memberid/kang?name=강영규">강영규</a></li>
+                <li style="font-weight: bold;"><a class ="nav_link"href="/memberid/park?name=박성민">박성민</a></li>
+                <li style="font-weight: bold;"><a class ="nav_link"href="/memberid/kwak?name=곽현규">곽현규</a></li>
+                <li style="font-weight: bold;"><a class ="nav_link"href="/memberid/shim?name=심재두">심재두</a></li>
+            </ul>
+        </div>
+    </nav>
+    <main>
+        <section class="contentwrap">
+            <div class="info_all">
+                <div class="img">
+                    <img src="https://noonnu.cc/assets/noon-0e36f3deb9d903ceec1946f9253c7dea1cd629ef8e2f1fc14ec2995aa7421b69.jpg" alt="">
+                </div>
+                <section class="main_content">
+                    <ul>
+                        <li>
+                            <h4 style="font-weight: bold;">5조 팀소개</h4>
+                            <p>
+                                 - 안녕하세요! 이번에 Node.js 부트캠프에 합류하게 된 B반 5조 강영규(팀장), 박성민(팀원), 곽현규(팀원), 심재두(팀원)이라고 합니다.
+                            </p>
+                        </li>
+                        <li>
+                            <h4 style="font-weight: bold;">5조 팀특징</h4>
+                            <p>
+                                 - 저희 5조의 팀 특징으로는 우선 의사소통이 활발 한게 특징입니다. 다른 것보다 프로젝트에 제일 중요한 것이 서로의 현재 상황 및 문제점, 그리고 도움 등을 소통으로 인지하고 해결해야 하는 것이 제일 중요한 부분인데 이것이 잘 이루어지는 것이 저희 팀 특징입니다.
+                            </p>
+                        </li>
+                        <li>
+                            <h4 style="font-weight: bold;">궁극적 목표</h4>
+                            <p>
+                                 - 저희 팀의 궁극적 목표는 사전캠프 동안 저희가 배웠던 것을 완벽하게 이루는 것 뿐만 아니라 추가적으로 공부를 해서 수정과 삭제를 자연스럽게 구현하는 것이 저희의 목표입니다.
+                            </p>
+                        </li>
+                        <li>
+                            <h4 style="font-weight: bold;">우리팀만의 약속</h4>
+                            <p>
+                                 - 우리팀만의 약속으로는 모르는 부분이여서 진행이 어렵거나 도움이 되는 정보 그리고 문제 등과 같은 의사소통이 필요한 부분을 서로 꼭 얘기를 해서 현재 저희 팀의 상황을 잘 인지하는 게 하는 것이 저희 팀의 약속입니다. 
+                            </p>
+                        </li>
+                    </ul>
+                </section>
+            </div>
+        </section>    
+        <section class="wrap">
+            <div class="showbtn">
+                <button  onclick="btnInput()" class="btn btn-outline-info" style="width:200px;height:50px; border-radius: 20px; font-size:18px; font-weight: bold;">팀원 등록하기</button>
+            </div>
+            <div id="regi" style="display: none; margin : 20px auto 40px auto; padding-top: 1px; padding-bottom: 1px; box-shadow: 0px 0px 3px 0px black; "> 
+                <h2 class="regi_head" style="text-align: center; margin-bottom: 20px; padding-bottom: 20px; font-weight: bold;">팀원 등록</h2>
+                <div class="row mb-4">
+                    <label for="inputName" class="col-sm-2 col-form-label" style="font-weight: bold; font-size: 20px; padding-left: 80px;" >이름</label>
+                  <div class="col-sm-10" style="padding-right: 150px;">
+                    <input type="text" class="form-control" id="inputName" placeholder="본인의 이름를 작성해주세요!">
+                  </div>
+                </div>
+                <div class="row mb-4">
+                    <label for="inputName" class="col-sm-2 col-form-label" style="font-weight: bold; font-size: 20px; padding-left: 80px;" >MBTI</label>
+                  <div class="col-sm-10" style="padding-right: 150px;">
+                    <input type="text" class="form-control" id="inputMbti" placeholder="본인의 MBTI를 작성해주세요!">
+                  </div>
+                </div>
+                <div class="row mb-4">
+                    <label for="inputName" class="col-sm-2 col-form-label" style="font-weight: bold; font-size: 20px; padding-left: 80px;" >장점</label>
+                    <div class="col-sm-10" style="padding-right: 150px;">
+                      <input type="text" class="form-control" id="inputAdvantage" placeholder="본인의 장점을 작성해주세요!">
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <label for="inputName" class="col-sm-2 col-form-label" style="font-weight: bold; font-size: 20px; padding-left: 80px;" >협업스타일</label>
+                    <div class="col-sm-10" style="padding-right: 150px;">
+                      <input type="text" class="form-control" id="inputStyle" placeholder="본인의 협업스타일을 작성해주세요!">
+                    </div>
+                </div>
+                <div class="btn-container">
+                    <button onclick="get_Info()" type="submit" class="btn btn-primary" style="margin-right: 15px;">등록하기</button> 
+                </div>
+            </div>
+            <div id="comment-lists">
+                <div class="memember_lists" >
+                    <ul class="member_Info">
+                        <p class = "member_title"></p>
+                        <p></p>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
